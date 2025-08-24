@@ -115,7 +115,7 @@ public class SseServiceImpl implements ISseService {
             }
             // 根据模型分类调用不同的处理逻辑
             IChatService chatService = chatServiceFactory.getChatService(chatModelVo.getCategory());
-            chatService.chat(chatRequest, sseEmitter);
+            chatService.chatStream(chatRequest, sseEmitter);
         } catch (Exception e) {
             log.error(e.getMessage(),e);
             SSEUtil.sendErrorEvent(sseEmitter,e.getMessage());

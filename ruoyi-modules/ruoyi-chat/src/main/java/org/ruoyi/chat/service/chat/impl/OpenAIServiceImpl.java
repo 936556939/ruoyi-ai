@@ -1,6 +1,7 @@
 package org.ruoyi.chat.service.chat.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import io.modelcontextprotocol.client.McpSyncClient;
 import lombok.extern.slf4j.Slf4j;
 import org.ruoyi.chat.config.ChatConfig;
@@ -48,7 +49,7 @@ public class OpenAIServiceImpl implements IChatService {
     }
 
     @Override
-    public SseEmitter chat(ChatRequest chatRequest,SseEmitter emitter) {
+    public SseEmitter chatStream(ChatRequest chatRequest, SseEmitter emitter) {
         ChatModelVo chatModelVo = chatModelService.selectModelByName(chatRequest.getModel());
         OpenAiStreamClient openAiStreamClient = ChatConfig.createOpenAiStreamClient(chatModelVo.getApiHost(), chatModelVo.getApiKey());
         List<Message> messages = chatRequest.getMessages();
@@ -73,9 +74,31 @@ public class OpenAIServiceImpl implements IChatService {
         return this.chatClient.prompt(prompt).call().content();
     }
 
+    /**
+     * 客户端发送消息到服务端
+     *
+     * @param chatRequest 请求对象
+     */
+    @Override
+    public ChatResponse chat(ChatRequest chatRequest) {
+        // TODO: 待补充
+        return null;
+    }
+
+    /**
+     * 获取服务端结果并转换为T
+     *
+     * @param bo 业务对象
+     * @param chatRequest 请求对象
+     */
+    @Override
+    public <T> T create(Class<T> bo, ChatRequest chatRequest) {
+        // TODO: 待补充
+        return null;
+    }
+
     @Override
     public String getCategory() {
         return ChatModeType.CHAT.getCode();
     }
-
 }

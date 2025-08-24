@@ -15,7 +15,6 @@ import java.util.List;
 @Data
 public class ChatRequest {
 
-    @NotEmpty(message = "对话消息不能为空")
     List<Message> messages;
 
     @NotEmpty(message = "传入的模型不能为空")

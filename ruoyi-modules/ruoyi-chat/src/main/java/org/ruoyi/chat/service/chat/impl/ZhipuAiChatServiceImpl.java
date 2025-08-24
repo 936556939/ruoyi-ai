@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import dev.langchain4j.community.model.zhipu.ZhipuAiChatModel;
+import dev.langchain4j.data.message.AiMessage;
 
 
 /**
@@ -23,20 +25,17 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  */
 @Service
 @Slf4j
-public class ZhipuAiChatServiceImpl  implements IChatService {
-
-    @Autowired
-    private IChatModelService chatModelService;
-
+public class ZhipuAiChatServiceImpl implements IChatService {
 
     ToolSpecification currentTime = ToolSpecification.builder()
             .name("currentTime")
             .description("currentTime")
             .build();
-
+    @Autowired
+    private IChatModelService chatModelService;
 
     @Override
-    public SseEmitter chat(ChatRequest chatRequest, SseEmitter emitter){
+    public SseEmitter chatStream(ChatRequest chatRequest, SseEmitter emitter) {
         ChatModelVo chatModelVo = chatModelService.selectModelByName(chatRequest.getModel());
         // 发送流式消息
         try {
@@ -51,7 +50,7 @@ public class ZhipuAiChatServiceImpl  implements IChatService {
                 @SneakyThrows
                 @Override
                 public void onError(Throwable error) {
-                   // System.out.println(error.getMessage());
+                    // System.out.println(error.getMessage());
                     emitter.send(error.getMessage());
                 }
 
@@ -74,6 +73,45 @@ public class ZhipuAiChatServiceImpl  implements IChatService {
         }
 
         return emitter;
+    }
+
+    /**
+     * 客户端发送消息到服务端
+     *
+     * @param chatRequest 请求对象
+     */
+    @Override
+    public ChatResponse chat(ChatRequest chatRequest) {
+        // 获取模型配置信息
+        ChatModelVo chatModelVo = chatModelService.selectModelByName(chatRequest.getModel());
+        
+        // 构建非流式智谱AI模型
+        ZhipuAiChatModel model = ZhipuAiChatModel.builder()
+                .model(chatModelVo.getModelName())
+                .apiKey(chatModelVo.getApiKey())
+                .logRequests(true)
+                .logResponses(true)
+                .build();
+                
+        // 发送请求并获取完整响应
+        String zhipuResponse = model.chat(chatRequest.getPrompt());
+        
+        // 将智谱AI响应转换为项目定义的ChatResponse
+        return ChatResponse.builder()
+                .aiMessage(AiMessage.builder().text(zhipuResponse).build())
+                .build();
+    }
+
+    /**
+     * 获取服务端结果并转换为T
+     *
+     * @param bo 业务对象
+     * @param chatRequest 请求对象
+     */
+    @Override
+    public <T> T create(Class<T> bo, ChatRequest chatRequest) {
+        // TODO: 待补充
+        return null;
     }
 
     @Override

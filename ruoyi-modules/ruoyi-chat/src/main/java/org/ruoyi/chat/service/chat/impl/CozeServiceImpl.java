@@ -6,6 +6,7 @@ import com.coze.openapi.client.chat.model.ChatEventType;
 import com.coze.openapi.client.connversations.message.model.Message;
 import com.coze.openapi.service.auth.TokenAuth;
 import com.coze.openapi.service.service.CozeAPI;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import io.reactivex.Flowable;
 import lombok.extern.slf4j.Slf4j;
 import org.ruoyi.chat.enums.ChatModeType;
@@ -34,7 +35,7 @@ public class CozeServiceImpl implements IChatService {
     private IChatModelService chatModelService;
 
     @Override
-    public SseEmitter chat(ChatRequest chatRequest, SseEmitter emitter) {
+    public SseEmitter chatStream(ChatRequest chatRequest, SseEmitter emitter) {
         ChatModelVo chatModelVo = chatModelService.selectModelByName(chatRequest.getModel());
         TokenAuth authCli = new TokenAuth(chatModelVo.getApiKey());
         CozeAPI coze =
@@ -70,6 +71,29 @@ public class CozeServiceImpl implements IChatService {
 
 
         return emitter;
+    }
+
+    /**
+     * 客户端发送消息到服务端
+     *
+     * @param chatRequest 请求对象
+     */
+    @Override
+    public ChatResponse chat(ChatRequest chatRequest) {
+        // TODO: 待补充
+        return null;
+    }
+
+    /**
+     * 获取服务端结果并转换为T
+     *
+     * @param bo 业务对象
+     * @param chatRequest 请求对象
+     */
+    @Override
+    public <T> T create(Class<T> bo, ChatRequest chatRequest) {
+        // TODO: 待补充
+        return null;
     }
 
     @Override

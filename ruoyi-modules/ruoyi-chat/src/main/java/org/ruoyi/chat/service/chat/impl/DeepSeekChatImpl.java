@@ -27,7 +27,7 @@ public class DeepSeekChatImpl  implements IChatService {
     private IChatModelService chatModelService;
 
     @Override
-    public SseEmitter chat(ChatRequest chatRequest, SseEmitter emitter) {
+    public SseEmitter chatStream(ChatRequest chatRequest, SseEmitter emitter) {
         ChatModelVo chatModelVo = chatModelService.selectModelByName(chatRequest.getModel());
         StreamingChatModel chatModel = OpenAiStreamingChatModel.builder()
                 .baseUrl(chatModelVo.getApiHost())
@@ -65,6 +65,29 @@ public class DeepSeekChatImpl  implements IChatService {
         }
 
         return emitter;
+    }
+
+    /**
+     * 客户端发送消息到服务端
+     *
+     * @param chatRequest 请求对象
+     */
+    @Override
+    public ChatResponse chat(ChatRequest chatRequest) {
+        // TODO: 待补充
+        return null;
+    }
+
+    /**
+     * 获取服务端结果并转换为T
+     *
+     * @param bo 业务对象
+     * @param chatRequest 请求对象
+     */
+    @Override
+    public <T> T create(Class<T> bo, ChatRequest chatRequest) {
+        // TODO: 待补充
+        return null;
     }
 
     @Override
