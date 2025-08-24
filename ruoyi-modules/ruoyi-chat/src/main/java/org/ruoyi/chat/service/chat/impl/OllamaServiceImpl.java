@@ -1,5 +1,9 @@
 package org.ruoyi.chat.service.chat.impl;
 
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.ollama.OllamaChatModel;
+import dev.langchain4j.service.AiServices;
 import io.github.ollama4j.OllamaAPI;
 import io.github.ollama4j.models.chat.OllamaChatMessage;
 import io.github.ollama4j.models.chat.OllamaChatMessageRole;
@@ -25,6 +29,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+
 import org.ruoyi.chat.support.RetryNotifier;
 import org.ruoyi.chat.support.ChatServiceHelper;
 
@@ -43,7 +48,7 @@ public class OllamaServiceImpl implements IChatService {
 
 
     @Override
-    public SseEmitter chat(ChatRequest chatRequest, SseEmitter emitter) {
+    public SseEmitter chatStream(ChatRequest chatRequest, SseEmitter emitter) {
         ChatModelVo chatModelVo = chatModelService.selectModelByName(chatRequest.getModel());
         String host = chatModelVo.getApiHost();
         List<Message> msgList = chatRequest.getMessages();
@@ -77,7 +82,7 @@ public class OllamaServiceImpl implements IChatService {
                     String substr = s.substring(response.length());
                     response.append(substr);
                     try {
-                        emitter.send(substr);
+                        emitter.send("data: " + substr);
                     } catch (IOException e) {
                         ChatServiceHelper.onStreamError(emitter, e.getMessage());
                     }
@@ -143,11 +148,12 @@ public class OllamaServiceImpl implements IChatService {
             // 将 Ollama 响应转换为项目定义的 ChatResponse
             ChatResponse.Builder responseBuilder = ChatResponse.builder();
 
-            responseBuilder.aiMessage(AiMessage.builder().text(ollamaResponse.getChatHistory().get(ollamaResponse.getChatHistory().size() - 1).getContent()).build());
+            String content = ollamaResponse.getChatHistory().get(ollamaResponse.getChatHistory().size() - 1).getContent();
+            responseBuilder.aiMessage(AiMessage.builder().text(content).build());
 
             // 保存聊天记录
             chatRequest.setRole(Message.Role.ASSISTANT.getName());
-            chatRequest.setPrompt(ollamaResponse.getChatHistory().get(ollamaResponse.getChatHistory().size() - 1).getContent());
+            chatRequest.setPrompt(content);
             saveChatMessage(chatRequest, chatMessageService);
 
             return responseBuilder.build();
@@ -185,4 +191,5 @@ public class OllamaServiceImpl implements IChatService {
     public String getCategory() {
         return ChatModeType.OLLAMA.getCode();
     }
+
 }

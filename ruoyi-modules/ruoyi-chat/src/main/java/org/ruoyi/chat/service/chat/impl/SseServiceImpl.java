@@ -155,10 +155,8 @@ public class SseServiceImpl implements ISseService {
                 );
             } else {
                 // 不重试不降级，直接调用
-                chatService.chat(chatRequest, sseEmitter);
+                chatService.chatStream(chatRequest, sseEmitter);
             }
-            // 根据模型分类调用不同的处理逻辑
-            IChatService chatService = chatServiceFactory.getChatService(chatModelVo.getCategory());
             chatService.chatStream(chatRequest, sseEmitter);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -198,7 +196,7 @@ public class SseServiceImpl implements ISseService {
      */
     private void autoSelectServiceByCategoryAndInvoke(ChatRequest chatRequest, SseEmitter sseEmitter, String category) {
         IChatService service = chatServiceFactory.getChatService(category);
-        service.chat(chatRequest, sseEmitter);
+        service.chatStream(chatRequest, sseEmitter);
     }
 
     /**

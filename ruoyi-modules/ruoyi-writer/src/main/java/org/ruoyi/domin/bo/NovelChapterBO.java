@@ -69,6 +69,5 @@ public class NovelChapterBO extends BaseEntity {
     /**
      * 排序
      */
-    @NotNull(message = "排序不能为空", groups = {EditGroup.class, AddGroup.class})
     private Integer orderNo;
 }

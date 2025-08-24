@@ -91,7 +91,7 @@ public class NovelChapterServiceImpl extends ServiceImpl<NovelChapterMapper, Nov
                 .like(StringUtils.isNotBlank(bo.getChapterOutline()), "chapter_outline", bo.getChapterOutline())
                 .like(StringUtils.isNotBlank(bo.getChapterData()), "chapter_data", bo.getChapterData())
                 .like(ObjectUtil.isNotNull(bo.getOrderNo()), "order_no", bo.getOrderNo());
-        wrapper.orderByAsc("order_no");
+        wrapper.orderByAsc("id").orderByAsc("order_no");
         return wrapper;
     }
 
