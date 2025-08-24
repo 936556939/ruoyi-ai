@@ -15,6 +15,7 @@ import org.ruoyi.service.IChatModelService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.ruoyi.chat.support.ChatServiceHelper;
 
 import dev.langchain4j.community.model.zhipu.ZhipuAiChatModel;
 import dev.langchain4j.data.message.AiMessage;
@@ -25,14 +26,17 @@ import dev.langchain4j.data.message.AiMessage;
  */
 @Service
 @Slf4j
-public class ZhipuAiChatServiceImpl implements IChatService {
+public class ZhipuAiChatServiceImpl  implements IChatService {
+
+    @Autowired
+    private IChatModelService chatModelService;
+
 
     ToolSpecification currentTime = ToolSpecification.builder()
             .name("currentTime")
             .description("currentTime")
             .build();
-    @Autowired
-    private IChatModelService chatModelService;
+
 
     @Override
     public SseEmitter chatStream(ChatRequest chatRequest, SseEmitter emitter) {
@@ -50,14 +54,14 @@ public class ZhipuAiChatServiceImpl implements IChatService {
                 @SneakyThrows
                 @Override
                 public void onError(Throwable error) {
-                    // System.out.println(error.getMessage());
-                    emitter.send(error.getMessage());
+                    ChatServiceHelper.onStreamError(emitter, error.getMessage());
                 }
 
                 @Override
                 public void onCompleteResponse(ChatResponse response) {
                     emitter.complete();
                     log.info("消息结束，完整消息ID: {}", response.aiMessage());
+                    org.ruoyi.chat.support.RetryNotifier.clear(emitter);
                 }
             };
 
@@ -70,6 +74,7 @@ public class ZhipuAiChatServiceImpl implements IChatService {
             model.chat(chatRequest.getPrompt(), handler);
         } catch (Exception e) {
             log.error("智谱清言请求失败：{}", e.getMessage());
+            ChatServiceHelper.onStreamError(emitter, e.getMessage());
         }
 
         return emitter;
@@ -84,7 +89,7 @@ public class ZhipuAiChatServiceImpl implements IChatService {
     public ChatResponse chat(ChatRequest chatRequest) {
         // 获取模型配置信息
         ChatModelVo chatModelVo = chatModelService.selectModelByName(chatRequest.getModel());
-        
+
         // 构建非流式智谱AI模型
         ZhipuAiChatModel model = ZhipuAiChatModel.builder()
                 .model(chatModelVo.getModelName())
@@ -92,10 +97,10 @@ public class ZhipuAiChatServiceImpl implements IChatService {
                 .logRequests(true)
                 .logResponses(true)
                 .build();
-                
+
         // 发送请求并获取完整响应
         String zhipuResponse = model.chat(chatRequest.getPrompt());
-        
+
         // 将智谱AI响应转换为项目定义的ChatResponse
         return ChatResponse.builder()
                 .aiMessage(AiMessage.builder().text(zhipuResponse).build())

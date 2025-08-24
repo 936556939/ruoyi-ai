@@ -8,6 +8,7 @@ import org.ruoyi.chat.config.ChatConfig;
 import org.ruoyi.chat.enums.ChatModeType;
 import org.ruoyi.chat.listener.SSEEventSourceListener;
 import org.ruoyi.chat.service.chat.IChatService;
+import org.ruoyi.chat.support.ChatServiceHelper;
 import org.ruoyi.common.chat.entity.chat.ChatCompletion;
 import org.ruoyi.common.chat.entity.chat.Message;
 import org.ruoyi.common.chat.openai.OpenAiStreamClient;
@@ -58,15 +59,19 @@ public class OpenAIServiceImpl implements IChatService {
             Message userMessage = Message.builder().content("工具返回信息："+toolString).role(Message.Role.USER).build();
             messages.add(userMessage);
         }
-        String token = StpUtil.getTokenValue();
-        SSEEventSourceListener listener = new SSEEventSourceListener(emitter,chatRequest.getUserId(),chatRequest.getSessionId(), token);
+        SSEEventSourceListener listener = ChatServiceHelper.createOpenAiListener(emitter, chatRequest);
         ChatCompletion completion = ChatCompletion
                 .builder()
                 .messages(messages)
                 .model(chatRequest.getModel())
                 .stream(true)
                 .build();
-        openAiStreamClient.streamChatCompletion(completion, listener);
+        try {
+            openAiStreamClient.streamChatCompletion(completion, listener);
+        } catch (Exception ex) {
+            ChatServiceHelper.onStreamError(emitter, ex.getMessage());
+            throw ex;
+        }
         return emitter;
     }
 

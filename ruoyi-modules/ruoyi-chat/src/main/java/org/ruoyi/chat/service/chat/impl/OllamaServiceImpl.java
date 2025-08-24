@@ -1,11 +1,5 @@
 package org.ruoyi.chat.service.chat.impl;
 
-
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.model.chat.response.ChatResponse;
-import dev.langchain4j.model.ollama.OllamaChatModel;
-import dev.langchain4j.service.AiServices;
-
 import io.github.ollama4j.OllamaAPI;
 import io.github.ollama4j.models.chat.OllamaChatMessage;
 import io.github.ollama4j.models.chat.OllamaChatMessageRole;
@@ -31,6 +25,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import org.ruoyi.chat.support.RetryNotifier;
+import org.ruoyi.chat.support.ChatServiceHelper;
 
 
 /**
@@ -47,7 +43,7 @@ public class OllamaServiceImpl implements IChatService {
 
 
     @Override
-    public SseEmitter chatStream(ChatRequest chatRequest, SseEmitter emitter) {
+    public SseEmitter chat(ChatRequest chatRequest, SseEmitter emitter) {
         ChatModelVo chatModelVo = chatModelService.selectModelByName(chatRequest.getModel());
         String host = chatModelVo.getApiHost();
         List<Message> msgList = chatRequest.getMessages();
@@ -83,19 +79,20 @@ public class OllamaServiceImpl implements IChatService {
                     try {
                         emitter.send(substr);
                     } catch (IOException e) {
-                        SSEUtil.sendErrorEvent(emitter, e.getMessage());
+                        ChatServiceHelper.onStreamError(emitter, e.getMessage());
                     }
                 };
                 api.chat(requestModel, streamHandler);
                 // 发送完成事件
                 emitter.send("[DONE]");
                 emitter.complete();
+                RetryNotifier.clear(emitter);
                 //保存模型返回信息
                 chatRequest.setRole(Message.Role.ASSISTANT.getName());
                 chatRequest.setPrompt(response.toString());
                 saveChatMessage(chatRequest, chatMessageService);
             } catch (Exception e) {
-                SSEUtil.sendErrorEvent(emitter, e.getMessage());
+                ChatServiceHelper.onStreamError(emitter, e.getMessage());
             }
         });
 
@@ -171,7 +168,7 @@ public class OllamaServiceImpl implements IChatService {
         // 获取模型配置信息
         ChatModelVo chatModelVo = chatModelService.selectModelByName(chatRequest.getModel());
         String host = chatModelVo.getApiHost();
-        
+
         // 创建OllamaChatModel实例
         OllamaChatModel chatModel = OllamaChatModel.builder()
                 .baseUrl(host)
@@ -179,7 +176,7 @@ public class OllamaServiceImpl implements IChatService {
                 .temperature(0.0)
                 .timeout(Duration.ofSeconds(100))
                 .build();
-        
+
         // 使用AiServices创建指定类型的AI服务
         return AiServices.create(bo, chatModel);
     }
